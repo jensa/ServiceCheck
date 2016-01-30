@@ -76,21 +76,17 @@ public class ServiceCheckTest {
     vertx.createHttpClient().post(8080, "localhost", "/service")
     .handler(postResponse -> {
       postResponse.bodyHandler(postBody -> {
-        System.out.println("postBody");
         JsonObject postJson = new JsonObject(postBody.toString());
         final String id = postJson.getString("id");
         //then remove it
         String deleteData = "{\"id\":\""+id+"\"}";
         vertx.createHttpClient().delete(8080, "localhost", "/service")
         .handler(deleteResponse -> {
-          System.out.println("deleteResponse");
           context.assertTrue(deleteResponse.statusCode() == 200);
           //check that its actually deleted
           vertx.createHttpClient().getNow(8080, "localhost", "/service",
            getResponse -> {
-            System.out.println("getResponse");
             getResponse.handler(body -> {
-              System.out.println("getBody");
               JsonObject json = new JsonObject(body.toString());
               JsonArray services = json.getJsonArray("services");
               for(int i = 0;i < services.size();i++){
