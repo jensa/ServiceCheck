@@ -42,7 +42,7 @@ public class ServiceCheck extends AbstractVerticle {
         String dbContent = readDbContents();
         response.end(dbContent);
       } catch(Exception e){
-        //return an object with an empty array
+        response.setStatusCode(500);
         response.end("{services:[]}");
       }
     });
@@ -50,37 +50,54 @@ public class ServiceCheck extends AbstractVerticle {
     router.route(HttpMethod.POST, "/service").handler(routingContext -> {
       HttpServerResponse response = routingContext.response();
       HttpServerRequest request = routingContext.request();
-      try{
-        request.bodyHandler(body -> {
-          try{
-            JsonObject newService = new JsonObject(body.toString());
-            newService.put("id", java.util.UUID.randomUUID().toString());
-            //consider checking status immediately, we probably should
-            JsonObject json = new JsonObject(readDbContents());
-            JsonArray services = json.getJsonArray("services");
-            services.add(newService);
-            json.put("services", services);
-            Files.write(Paths.get(dbFile), json.toString().getBytes());
-            response.putHeader("content-type", "text/json; charset=utf-8");
-            // Write to the response and end it
-            response.end(newService.toString());
-          } catch(Exception e){
-            response.setStatusCode(200);
-            response.end("Failed to create new service - could not parse body");
-          }
-        });
-      } catch(Exception e){
-        response.setStatusCode(200);
-        response.end("Failed to create new service");
-      }
-
+      request.bodyHandler(body -> {
+        try{
+          JsonObject newService = new JsonObject(body.toString());
+          newService.put("id", java.util.UUID.randomUUID().toString());
+          //consider checking status immediately, we probably should
+          JsonObject json = new JsonObject(readDbContents());
+          JsonArray services = json.getJsonArray("services");
+          services.add(newService);
+          json.put("services", services);
+          Files.write(Paths.get(dbFile), json.toString().getBytes());
+          response.putHeader("content-type", "text/json; charset=utf-8");
+          // Write to the response and end it
+          response.end(newService.toString());
+        } catch(Exception e){
+          response.setStatusCode(500);
+          response.end("Failed to create new service - could not parse body");
+        }
+      });
     });
-    router.route(HttpMethod.DELETE, "/service/*").handler(routingContext -> {
+
+    router.route(HttpMethod.DELETE, "/service").handler(routingContext -> {
       HttpServerResponse response = routingContext.response();
       HttpServerRequest request = routingContext.request();
-      response.end("DELETE");
-    });
+      request.bodyHandler(body -> {
+        try{
+          JsonObject serviceToDelete = new JsonObject(body.toString());
+          String id = serviceToDelete.getString("id");
 
+          JsonObject json = new JsonObject(readDbContents());
+          JsonArray services = json.getJsonArray("services");
+          for(int i = 0;i < services.size();i++){
+            JsonObject service = services.getJsonObject(i);
+            if(service.getString("id").equals(id)){
+              services.remove(i);
+              break;
+            }
+          }
+          json.put("services", services);
+          Files.write(Paths.get(dbFile), json.toString().getBytes());
+          // Write to the response and end it
+          response.putHeader("content-type", "text/json; charset=utf-8");
+          response.end("{}");
+        } catch(Exception e){
+          response.setStatusCode(500);
+          response.end("Ah fuck...");
+        }
+      });
+    });
     //setup static stuff, will serve from webroot...
     router.route().handler(StaticHandler.create());
     server.requestHandler(router::accept).listen(8080, result -> {

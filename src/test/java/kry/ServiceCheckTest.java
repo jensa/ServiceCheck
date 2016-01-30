@@ -52,7 +52,6 @@ public class ServiceCheckTest {
     String postData = "{\"name\":\"testservice\", \"url\":\"kry.se\"}";
 
     vertx.createHttpClient().post(8080, "localhost", "/service")
-    .putHeader("Content-Length", String.valueOf(postData.length()))
     .handler(response -> {
       response.bodyHandler(body -> {
         JsonObject json = new JsonObject(body.toString());
@@ -62,6 +61,7 @@ public class ServiceCheckTest {
         async.complete();
       });
     })
+    .putHeader("Content-Length", String.valueOf(postData.length()))
     .write(postData)
     .end();
   }
@@ -69,13 +69,47 @@ public class ServiceCheckTest {
   @Test
   public void testDelete(TestContext context) {
     final Async async = context.async();
-    vertx.createHttpClient().delete(8080, "localhost", "/service")
-    .handler(response -> {
-      response.bodyHandler(body -> {
-        context.assertTrue(body.toString().contains("DELETE"));
-        async.complete();
+
+    //first create a new service
+    String postData = "{\"name\":\"testservice\", \"url\":\"kry.se\"}";
+
+    vertx.createHttpClient().post(8080, "localhost", "/service")
+    .handler(postResponse -> {
+      postResponse.bodyHandler(postBody -> {
+        System.out.println("postBody");
+        JsonObject postJson = new JsonObject(postBody.toString());
+        final String id = postJson.getString("id");
+        //then remove it
+        String deleteData = "{\"id\":\""+id+"\"}";
+        vertx.createHttpClient().delete(8080, "localhost", "/service")
+        .handler(deleteResponse -> {
+          System.out.println("deleteResponse");
+          context.assertTrue(deleteResponse.statusCode() == 200);
+          //check that its actually deleted
+          vertx.createHttpClient().getNow(8080, "localhost", "/service",
+           getResponse -> {
+            System.out.println("getResponse");
+            getResponse.handler(body -> {
+              System.out.println("getBody");
+              JsonObject json = new JsonObject(body.toString());
+              JsonArray services = json.getJsonArray("services");
+              for(int i = 0;i < services.size();i++){
+                JsonObject service = services.getJsonObject(i);
+                if(service.getString("id").equals(id))
+                  context.assertTrue(false);
+              }
+              async.complete();
+            });
+          });
+        })
+        .putHeader("Content-Length", String.valueOf(deleteData.length()))
+        .write(deleteData)
+        .end();
+
       });
     })
+    .putHeader("Content-Length", String.valueOf(postData.length()))
+    .write(postData)
     .end();
   }
 }
