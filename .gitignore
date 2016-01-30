@@ -14,3 +14,4 @@ target/
 .DS_Store
 node_modules
 webroot/bundle.js
+dbfile.json
