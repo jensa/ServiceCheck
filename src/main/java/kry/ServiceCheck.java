@@ -52,6 +52,7 @@ public class ServiceCheck extends AbstractVerticle {
       HttpServerRequest request = routingContext.request();
       request.bodyHandler(body -> {
         try{
+          System.out.println(body.toString());
           JsonObject newService = new JsonObject(body.toString());
           newService.put("id", java.util.UUID.randomUUID().toString());
           //consider checking status immediately, we probably should
@@ -65,38 +66,37 @@ public class ServiceCheck extends AbstractVerticle {
           response.end(newService.toString());
         } catch(Exception e){
           response.setStatusCode(500);
-          response.end("Failed to create new service - could not parse body");
+          response.end("Failed to create new service:\\n" + e.toString());
         }
       });
     });
 
-    router.route(HttpMethod.DELETE, "/service").handler(routingContext -> {
+    router.route(HttpMethod.DELETE, "/service/*").handler(routingContext -> {
       HttpServerResponse response = routingContext.response();
       HttpServerRequest request = routingContext.request();
-      request.bodyHandler(body -> {
-        try{
-          JsonObject serviceToDelete = new JsonObject(body.toString());
-          String id = serviceToDelete.getString("id");
 
-          JsonObject json = new JsonObject(readDbContents());
-          JsonArray services = json.getJsonArray("services");
-          for(int i = 0;i < services.size();i++){
-            JsonObject service = services.getJsonObject(i);
-            if(service.getString("id").equals(id)){
-              services.remove(i);
-              break;
-            }
+      //id is last part of request URL
+      String uri = request.uri();
+      String id = uri.substring(uri.lastIndexOf("/")+1);
+      try{
+        JsonObject json = new JsonObject(readDbContents());
+        JsonArray services = json.getJsonArray("services");
+        for(int i = 0;i < services.size();i++){
+          JsonObject service = services.getJsonObject(i);
+          if(service.getString("id").equals(id)){
+            services.remove(i);
+            break;
           }
-          json.put("services", services);
-          Files.write(Paths.get(dbFile), json.toString().getBytes());
-          // Write to the response and end it
-          response.putHeader("content-type", "text/json; charset=utf-8");
-          response.end("{}");
-        } catch(Exception e){
-          response.setStatusCode(500);
-          response.end("Ah fuck...");
         }
-      });
+        json.put("services", services);
+        Files.write(Paths.get(dbFile), json.toString().getBytes());
+        // Write to the response and end it
+        response.putHeader("content-type", "text/json; charset=utf-8");
+        response.end("{}");
+      } catch(Exception e){
+        response.setStatusCode(500);
+        response.end("Error deleting service:\\n"+e.toString());
+      }
     });
     //setup static stuff, will serve from webroot...
     router.route().handler(StaticHandler.create());

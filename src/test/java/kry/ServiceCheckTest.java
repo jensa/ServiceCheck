@@ -79,8 +79,7 @@ public class ServiceCheckTest {
         JsonObject postJson = new JsonObject(postBody.toString());
         final String id = postJson.getString("id");
         //then remove it
-        String deleteData = "{\"id\":\""+id+"\"}";
-        vertx.createHttpClient().delete(8080, "localhost", "/service")
+        vertx.createHttpClient().delete(8080, "localhost", "/service/"+id)
         .handler(deleteResponse -> {
           context.assertTrue(deleteResponse.statusCode() == 200);
           //check that its actually deleted
@@ -98,8 +97,8 @@ public class ServiceCheckTest {
             });
           });
         })
-        .putHeader("Content-Length", String.valueOf(deleteData.length()))
-        .write(deleteData)
+        .putHeader("Content-Length", String.valueOf(0))
+        .write("")
         .end();
 
       });
