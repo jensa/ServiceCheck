@@ -9,6 +9,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+
 @RunWith(VertxUnitRunner.class)
 public class ServiceCheckTest {
 
@@ -34,11 +37,15 @@ public class ServiceCheckTest {
     vertx.createHttpClient().getNow(8080, "localhost", "/service",
      response -> {
       response.handler(body -> {
-        context.assertTrue(body.toString().contains("GET"));
+        JsonObject json = new JsonObject(body.toString());
+        JsonArray services = json.getJsonArray("services");
+        JsonObject service = services.getJsonObject(0);
+        context.assertTrue("test service".equals(service.getString("name")));
         async.complete();
       });
     });
   }
+
   @Test
   public void testPost(TestContext context) {
     final Async async = context.async();
