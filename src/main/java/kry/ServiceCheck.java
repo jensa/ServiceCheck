@@ -11,6 +11,8 @@ import java.nio.file.Files;
 import java.io.File;
 import java.nio.file.Paths;
 import java.io.IOException;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 public class ServiceCheck extends AbstractVerticle {
 
@@ -48,7 +50,29 @@ public class ServiceCheck extends AbstractVerticle {
     router.route(HttpMethod.POST, "/service").handler(routingContext -> {
       HttpServerResponse response = routingContext.response();
       HttpServerRequest request = routingContext.request();
-      response.end("POST");
+      try{
+        request.bodyHandler(body -> {
+          try{
+            JsonObject newService = new JsonObject(body.toString());
+            newService.put("id", java.util.UUID.randomUUID().toString());
+            //consider checking status immediately, we probably should
+            JsonObject json = new JsonObject(readDbContents());
+            JsonArray services = json.getJsonArray("services");
+            services.add(newService);
+            json.put("services", services);
+            Files.write(Paths.get(dbFile), json.toString().getBytes());
+            response.putHeader("content-type", "text/json; charset=utf-8");
+            // Write to the response and end it
+            response.end(newService.toString());
+          } catch(Exception e){
+            response.setStatusCode(200);
+            response.end("Failed to create new service - could not parse body");
+          }
+        });
+      } catch(Exception e){
+        response.setStatusCode(200);
+        response.end("Failed to create new service");
+      }
 
     });
     router.route(HttpMethod.DELETE, "/service/*").handler(routingContext -> {

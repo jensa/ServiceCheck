@@ -49,14 +49,20 @@ public class ServiceCheckTest {
   @Test
   public void testPost(TestContext context) {
     final Async async = context.async();
+    String postData = "{\"name\":\"testservice\", \"url\":\"kry.se\"}";
 
     vertx.createHttpClient().post(8080, "localhost", "/service")
+    .putHeader("Content-Length", String.valueOf(postData.length()))
     .handler(response -> {
       response.bodyHandler(body -> {
-        context.assertTrue(body.toString().contains("POST"));
+        JsonObject json = new JsonObject(body.toString());
+        context.assertTrue("testservice".equals(json.getString("name")));
+        context.assertTrue("kry.se".equals(json.getString("url")));
+        context.assertTrue(!json.getString("id").isEmpty());
         async.complete();
       });
     })
+    .write(postData)
     .end();
   }
 
