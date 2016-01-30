@@ -12,3 +12,5 @@
 hs_err_pid*
 target/
 .DS_Store
+node_modules
+webroot/bundle.js
