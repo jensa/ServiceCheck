@@ -2,10 +2,12 @@
 Check up on services!
 
 #build
-Package Frontend:
+##Package frontend:
 npm install
+
 gulp
 
-compile & run server:
+##Compile & run server:
 mvn clean package
+
 java -jar target/servicecheck-1.0-SNAPSHOT-fat.jar -conf appconf.json
