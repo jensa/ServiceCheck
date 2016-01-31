@@ -88,7 +88,7 @@ public class ServiceCheck extends AbstractVerticle {
     JsonObject jsonObject = new JsonObject(request);
     jsonObject.put("id", java.util.UUID.randomUUID().toString());
     String url = jsonObject.getString("url");
-    if(!(url.startsWith("http://")))
+    if(!url.startsWith("http"))
       url = "http://" + url;
     jsonObject.put("url", url);
     return jsonObject;
