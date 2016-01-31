@@ -13,8 +13,13 @@ public class Db {
       File f = new File(dbFile);
       if(f.isDirectory())
         return "";
-      if(!f.exists())
+      if(!f.exists()){
         f.createNewFile();
+      }
+      String contents = new String(Files.readAllBytes(Paths.get(dbFile)));
+      if(contents.isEmpty()){
+        Files.write(Paths.get(dbFile), "{\"services\":[]}".getBytes());
+      }
       return new String(Files.readAllBytes(Paths.get(dbFile)));
     }
 
