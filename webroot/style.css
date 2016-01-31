@@ -1,0 +1,27 @@
+.delete{
+  cursor: pointer;
+  margin:5;
+}
+.add{
+  cursor: pointer;
+  margin:5;
+}
+
+.listItemContent{
+  font-size:20;
+}
+
+.listItemContainer{
+  margin:2
+}
+
+input{
+  height: 40;
+  margin: 5;
+  font-size: 20;
+}
+
+ul{
+list-style-type: none;
+padding:0
+}

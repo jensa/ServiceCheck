@@ -7,29 +7,22 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.ErrorHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 
-import java.nio.file.Files;
-import java.io.File;
-import java.nio.file.Paths;
-import java.io.IOException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class ServiceCheck extends AbstractVerticle {
 
-  private String dbFile = "dbfile.json";
-
-  private String readDbContents() throws IOException{
-    File f = new File(dbFile);
-    if(f.isDirectory())
-      return "";
-    if(!f.exists())
-      f.createNewFile();
-    return new String(Files.readAllBytes(Paths.get(dbFile)));
-  }
-
+  private ServiceCheckBackgroundService backgroundService;
   @Override
   public void start(Future<Void> fut) {
     HttpServer server = vertx.createHttpServer();
+
+    backgroundService = new ServiceCheckBackgroundService(vertx);
+    if(config().getBoolean("runBackgroundService")){
+      //start background service immediately
+      backgroundService.Run();
+
+    }
 
     Router router = Router.router(vertx);
 
@@ -39,7 +32,7 @@ public class ServiceCheck extends AbstractVerticle {
       try{
         response.putHeader("content-type", "text/json; charset=utf-8");
         //read from file and just write all of it:
-        String dbContent = readDbContents();
+        String dbContent = Db.readDbContents();
         response.end(dbContent);
       } catch(Exception e){
         response.setStatusCode(500);
@@ -51,23 +44,29 @@ public class ServiceCheck extends AbstractVerticle {
       HttpServerResponse response = routingContext.response();
       HttpServerRequest request = routingContext.request();
       request.bodyHandler(body -> {
-        try{
-          System.out.println(body.toString());
-          JsonObject newService = new JsonObject(body.toString());
-          newService.put("id", java.util.UUID.randomUUID().toString());
-          //consider checking status immediately, we probably should
-          JsonObject json = new JsonObject(readDbContents());
-          JsonArray services = json.getJsonArray("services");
-          services.add(newService);
-          json.put("services", services);
-          Files.write(Paths.get(dbFile), json.toString().getBytes());
-          response.putHeader("content-type", "text/json; charset=utf-8");
-          // Write to the response and end it
-          response.end(newService.toString());
-        } catch(Exception e){
-          response.setStatusCode(500);
-          response.end("Failed to create new service:\\n" + e.toString());
-        }
+          JsonObject jsonObject = new JsonObject(body.toString());
+          jsonObject.put("id", java.util.UUID.randomUUID().toString());
+          String url = jsonObject.getString("url");
+          if(!(url.startsWith("http://")))
+            url = "http://" + url;
+          jsonObject.put("url", url);
+          backgroundService.checkOne(jsonObject, newService ->
+          {
+            try{
+              JsonObject dbContents = new JsonObject(Db.readDbContents());
+              JsonArray services = dbContents.getJsonArray("services");
+              services.add(newService);
+
+              dbContents.put("services", services);
+              Db.writeToDb(dbContents);
+              response.putHeader("content-type", "text/json; charset=utf-8");
+              // Write to the response and end it
+              response.end(newService.toString());
+            } catch(Exception e){
+              response.setStatusCode(500);
+              response.end("Failed to create new service:\\n" + e.toString());
+            }
+          });
       });
     });
 
@@ -76,10 +75,10 @@ public class ServiceCheck extends AbstractVerticle {
       HttpServerRequest request = routingContext.request();
 
       //id is last part of request URL
-      String uri = request.uri();
+      String uri = routingContext.normalisedPath();
       String id = uri.substring(uri.lastIndexOf("/")+1);
       try{
-        JsonObject json = new JsonObject(readDbContents());
+        JsonObject json = new JsonObject(Db.readDbContents());
         JsonArray services = json.getJsonArray("services");
         for(int i = 0;i < services.size();i++){
           JsonObject service = services.getJsonObject(i);
@@ -89,7 +88,7 @@ public class ServiceCheck extends AbstractVerticle {
           }
         }
         json.put("services", services);
-        Files.write(Paths.get(dbFile), json.toString().getBytes());
+        Db.writeToDb(json);
         // Write to the response and end it
         response.putHeader("content-type", "text/json; charset=utf-8");
         response.end("{}");

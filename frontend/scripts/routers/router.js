@@ -3,8 +3,9 @@ var Backbone = require('backbone');
 var _ = require('underscore');
 Backbone.$ = $;
 
-var servicesView = require('../views/serviceList');
+var servicesView = require('../views/serviceView');
 var ServiceModel = require('../models/service');
+var ServiceList = require('../collections/serviceCollection');
 
 module.exports = Backbone.Router.extend({
     routes: {
@@ -13,26 +14,15 @@ module.exports = Backbone.Router.extend({
     },
 
     delete: function(id) {
-        var service = new ServiceModel({ id: id });
-        service.destroy({
-            success: function(model, resp) {
-            },
-            error: function() {
-                new Error({ message: 'Could delete service with id: ' + id + '.' });
-                window.location.hash = '#';
-            }
-        });
+
     },
 
     index: function() {
-        $.getJSON('/service', function(data) {
-            if(data) {
-                var services = _(data.services).map(function(i) { return new ServiceModel(i); });
-                new servicesView({ services: services });
-            } else {
-              new Error({ message: "Error loading services." });
-            }
-        });
+      ServiceList.initList(function(){
+        var view = new servicesView({});
+        $('#serviceList').append(view.render().el);
+      })
+
     },
 
 

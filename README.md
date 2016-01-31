@@ -6,6 +6,6 @@ Package Frontend:
 npm install
 gulp
 
-compile % run Server:
+compile & run server:
 mvn clean package
-java -jar target/servicecheck-1.0-SNAPSHOT-fat.jar
+java -jar target/servicecheck-1.0-SNAPSHOT-fat.jar -conf appconf.json

@@ -8,6 +8,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import io.vertx.core.DeploymentOptions;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -20,8 +21,11 @@ public class ServiceCheckTest {
   @Before
   public void setUp(TestContext context) {
     vertx = Vertx.vertx();
+    DeploymentOptions options = new DeploymentOptions()
+      .setConfig(new JsonObject().put("runBackgroundService", false)
+    );
     vertx.deployVerticle(ServiceCheck.class.getName(),
-        context.asyncAssertSuccess());
+    options, context.asyncAssertSuccess());
   }
 
   @After
@@ -39,8 +43,6 @@ public class ServiceCheckTest {
       response.handler(body -> {
         JsonObject json = new JsonObject(body.toString());
         JsonArray services = json.getJsonArray("services");
-        JsonObject service = services.getJsonObject(0);
-        context.assertTrue("test service".equals(service.getString("name")));
         async.complete();
       });
     });
@@ -49,14 +51,15 @@ public class ServiceCheckTest {
   @Test
   public void testPost(TestContext context) {
     final Async async = context.async();
-    String postData = "{\"name\":\"testservice\", \"url\":\"kry.se\"}";
+    String postData = "{\"name\":\"testservice\", \"url\":\"http://kry.se\"}";
 
     vertx.createHttpClient().post(8080, "localhost", "/service")
     .handler(response -> {
       response.bodyHandler(body -> {
+        System.out.println(body);
         JsonObject json = new JsonObject(body.toString());
         context.assertTrue("testservice".equals(json.getString("name")));
-        context.assertTrue("kry.se".equals(json.getString("url")));
+        context.assertTrue("http://kry.se".equals(json.getString("url")));
         context.assertTrue(!json.getString("id").isEmpty());
         async.complete();
       });
@@ -69,9 +72,8 @@ public class ServiceCheckTest {
   @Test
   public void testDelete(TestContext context) {
     final Async async = context.async();
-
     //first create a new service
-    String postData = "{\"name\":\"testservice\", \"url\":\"kry.se\"}";
+    String postData = "{\"name\":\"testservice\", \"url\":\"http://kry.se\"}";
 
     vertx.createHttpClient().post(8080, "localhost", "/service")
     .handler(postResponse -> {
