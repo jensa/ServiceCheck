@@ -49,7 +49,7 @@ public class ServiceCheck extends AbstractVerticle {
               response.end(newService.toString());
             } catch(Exception e){
               response.setStatusCode(500);
-              response.end("Failed to create new service:\\n" + e.toString());
+              response.end("{}");
             }
           });
       });

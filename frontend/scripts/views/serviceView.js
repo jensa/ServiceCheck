@@ -32,7 +32,9 @@ var ServiceItemView = Backbone.View.extend({
     var url = this.model.escape("url");
     if(url.lastIndexOf("http", 0) !== 0)
       url = "http://"+url;
-    var html = "<div class='listItemContainer'><span class='listItemContent'>";
+    var statusClass = this.model.escape("status") === "OK" ? "ok-status" : "notok-status";
+    var html = "<div class='listItemContainer " + statusClass;
+    html += "'><span class='listItemContent'>";
     html += "<a href='"+url+"'>" + this.model.escape("name") + "</a>";
     html += " was last checked on " +this.model.escape("lastCheck")+" and is "+this.model.escape("status")+"</span>";
     html += "<span class='fa fa-times delete'>";
@@ -58,7 +60,7 @@ var InputView = Backbone.View.extend({
     var name = $('#name').val();
     var url = $('#url').val();
     var service = new ServiceModel({name:name, url:url});
-    service.save({}, {
+    service.save(null, {
         success: function(model, resp) {
           ServiceList.add(model);
         },

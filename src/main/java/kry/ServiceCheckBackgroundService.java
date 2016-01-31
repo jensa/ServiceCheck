@@ -45,14 +45,18 @@ public class ServiceCheckBackgroundService {
 
 
   public void checkOne(final JsonObject obj, Handler<JsonObject> callback){
+    LocalDateTime date = LocalDateTime.now();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     vertx.createHttpClient().getAbs(obj.getString("url") +":80",
      response -> {
        boolean isOk = response.statusCode() == 200;
-       LocalDateTime date = LocalDateTime.now();
-       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
        obj.put("status", isOk ? "OK" : "NOT OK");
        obj.put("lastCheck", date.format(formatter));
        callback.handle(obj);
+    }).exceptionHandler(exception -> {
+      obj.put("status", "NOT OK");
+      obj.put("lastCheck", date.format(formatter));
+      callback.handle(obj);
     }).end();
   }
 

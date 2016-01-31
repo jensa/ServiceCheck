@@ -1,7 +1,7 @@
 # ServiceCheck
 Check up on services!
 
-#build
+#Build
 ##Package frontend:
 npm install
 

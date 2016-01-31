@@ -25,3 +25,10 @@ ul{
 list-style-type: none;
 padding:0
 }
+
+.ok-status{
+  background-color: "#2ecc71";
+  }
+.notok-status{
+  background-color: "#e74c3c";
+}
