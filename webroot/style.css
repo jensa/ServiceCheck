@@ -12,7 +12,10 @@
 }
 
 .listItemContainer{
-  margin:2
+  margin: 5;
+border-radius: 10px;
+padding: 3;
+padding-left: 10;
 }
 
 input{
@@ -27,8 +30,8 @@ padding:0
 }
 
 .ok-status{
-  background-color: "#2ecc71";
+  background-color: #2ecc71;
   }
 .notok-status{
-  background-color: "#e74c3c";
+  background-color: #e74c3c;
 }
