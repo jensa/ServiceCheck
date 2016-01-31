@@ -52,7 +52,7 @@ var InputView = Backbone.View.extend({
   tagName: 'span',
 
   render: function(){
-    this.$el.html("<input type='text' id='name'/><input type='text' id='url'/><span id='addButton' class='add fa fa-plus'></span>");
+    this.$el.html("<input type='text' id='name' placeholder='Service Name...'/><input placeholder='Service URL...' type='text' id='url'/><span id='addButton' class='add fa fa-plus'></span>");
     return this;
   },
 
