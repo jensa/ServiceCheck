@@ -12,7 +12,8 @@ import java.nio.file.Paths;
 import java.io.IOException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 import java.util.Timer;
@@ -45,7 +46,7 @@ public class ServiceCheckBackgroundService {
 
 
   public void checkOne(final JsonObject obj, Handler<JsonObject> callback){
-    LocalDateTime date = LocalDateTime.now();
+    ZonedDateTime date = ZonedDateTime.now(ZoneId.of("Europe/Paris"));
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     vertx.createHttpClient().getAbs(obj.getString("url") +":80",
      response -> {
